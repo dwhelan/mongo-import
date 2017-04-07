@@ -72,12 +72,12 @@ const importOne = (mongoUrl, csv, collection) => {
 
   importProcess.stderr.on('data', data => {
     const string = data.toString();
-    const colour = string.match(/(failed|imported 0)/i) ? red : yellow;
+    const colour = string.match(/(failed|imported 0|error)/i) ? red : yellow;
     log(colour, string);
   });
 
   importProcess.on('close', code => {
-    const message = code === 0 ? green('  Import succeeded.\n') : red(`  Import of the '${collection}' collection into the '${database}' database on '${url.hostname}:${url.port} failed (code=${code})\n`);
+    const message = code === 0 ? green(`  Import of ${collection} succeeded.\n`) : red(`  Import of the '${collection}' collection into the '${database}' database on '${url.hostname}:${url.port} failed (code=${code})\n`);
     console.log(message);
   });
 };
