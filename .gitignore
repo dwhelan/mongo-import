@@ -1,0 +1,6 @@
+.DS_Store
+reports
+.vscode
+.nyc_output
+node_modules
+reports

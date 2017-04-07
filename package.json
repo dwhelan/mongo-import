@@ -1,0 +1,31 @@
+{
+  "name": "mongo-import",
+  "version": "0.0.1",
+  "license": "UNLICENSED",
+  "description": "mongo-import",
+  "bin": {
+    "mongo-import": "mongo-import"
+  },
+  "scripts": {
+    "build": "yarn lint",
+    "cover": "nyc yarn test",
+    "lint": "eslint .",
+    "import": "node ./mongo-import ./tables/test.csv Test",
+    "start": "npm run import",
+    "test": "mocha --colors --recursive"
+  },
+  "dependencies": {
+    "cli-color": "^1.2.0",
+    "commander": "^2.9.0",
+    "url-parse": "^1.1.8"
+  },
+  "devDependencies": {
+    "eslint": "^3.19.0",
+    "eslint-plugin-nodeca": "^1.0.3",
+    "mocha": "^3.2.0",
+    "nyc": "^10.2.0"
+  },
+  "publishConfig": {
+    "registry": "https://artifactory.manulife.com/api/npm/mfc-dig-npm-local"
+  }
+}
