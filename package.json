@@ -10,13 +10,15 @@
     "build": "yarn lint",
     "cover": "nyc yarn test",
     "lint": "eslint .",
-    "import": "node ./mongo-import ./tables/test.csv Test",
+    "import": "mongo-import ./tables/test.csv Test",
     "start": "npm run import",
     "test": "mocha --colors --recursive"
   },
   "dependencies": {
     "cli-color": "^1.2.0",
     "commander": "^2.9.0",
+    "fs": "^0.0.1-security",
+    "path": "^0.12.7",
     "url-parse": "^1.1.8"
   },
   "devDependencies": {

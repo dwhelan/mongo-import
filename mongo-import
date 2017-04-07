@@ -2,6 +2,8 @@
 'use strict'; // eslint-disable-line strict
 
 const program = require('commander');
+const fs      = require('fs');
+const path    = require('path');
 const parse   = require('url-parse');
 const spawn   = require('child_process').spawn;
 const colour  = require('cli-color');
@@ -32,7 +34,8 @@ const validateEnvironment = env => {
   }
 };
 
-const doImport = (mongoUrl, csv, collection) => {
+
+const importOne = (mongoUrl, csv, collection) => {
   const url = parse(mongoUrl, true);
   const database = url.pathname.substr(1);
 
@@ -74,21 +77,30 @@ const doImport = (mongoUrl, csv, collection) => {
   });
 
   importProcess.on('close', code => {
-    const message = code === 0 ? green('  Import succeeded.\n') : red(`  Import to ${url} failed (code=${code})\n`);
+    const message = code === 0 ? green('  Import succeeded.\n') : red(`  Import of the '${collection}' collection into the '${database}' database on '${url.hostname}:${url.port} failed (code=${code})\n`);
     console.log(message);
   });
 };
 
+const doImport = mongoUlr => {
+  _.each(fs.readdirSync('./tables'), file => {
+    if (_.endsWith(file, '.csv')) {
+      const collection = path.basename(file, '.csv');
+      importOne(mongoUlr, './tables/' + file, collection);
+    }
+  });
+};
+
 program
-  .arguments('<env> <csv> <collection>')
-  .action( (env, csv, collection) => {
+  .arguments('<env> ')
+  .action( (env) => {
     validateEnvironment(env);
     importStarted = true;
-    doImport(mongoUrls[env], csv, collection);
+    doImport(mongoUrls[env]);
   });
 
 program.parse(process.argv);
 
 if (!importStarted) {
-  console.log(`  error: missing required argument 'env' - should be one of '${validEnvironments.join("', '")}'`);
+    console.log(`  error: missing required argument 'env' - should be one of '${validEnvironments.join("', '")}'`);
 }

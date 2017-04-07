@@ -18,7 +18,7 @@ yarn add mongo-import --dev
 
 # Add import scripts to you project
 
-If you have a single csv file to import then update your `package.json` as follows:
+Update your `package.json` as follows:
 
 ```
   ...
@@ -26,7 +26,7 @@ If you have a single csv file to import then update your `package.json` as follo
   "scripts": {
     ...
 
-    "import": "npm run mongo-import ./tables/GeoLocation.csv GeoLocation",
+    "import": mongo-import",
 
     ...
   },
@@ -36,7 +36,7 @@ If you have a single csv file to import then update your `package.json` as follo
 
 # Run the script
 
-The script assumes that the .csv files you want to i
+The script assumes that the .csv files you want to import are in your local `tables` folder.
 
 ```
 npm run mongo-import
