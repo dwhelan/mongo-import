@@ -92,8 +92,8 @@ const doImport = mongoUlr => {
 };
 
 program
-  .arguments('<env> ')
-  .action( (env) => {
+  .arguments('mongo-import <env> ')
+  .action( env => {
     validateEnvironment(env);
     importStarted = true;
     doImport(mongoUrls[env]);
