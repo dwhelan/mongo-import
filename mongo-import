@@ -1,0 +1,116 @@
+#!/usr/bin/env node
+'use strict'; // eslint-disable-line strict
+
+const program = require('commander');
+const fs      = require('fs');
+const path    = require('path');
+const yaml    = require('js-yaml');
+const parse   = require('url-parse');
+const spawn   = require('child_process').spawn;
+const colour  = require('cli-color');
+const _       = require('lodash');
+
+const red    = colour.red;
+const green  = colour.green;
+const yellow = colour.yellow;
+
+const manifestFiles = {
+  'dev': 'manifest.yml',
+  'qa':  'manifest-test.yml',
+  'uat': 'manifest-uat.yml'
+};
+
+const validEnvironments = _.union(_.keys(manifestFiles), ['local']);
+
+const mongoUrl = env => {
+  if (env === 'local') {
+    return 'mongodb://localhost:27017/dev';
+  } else {
+    const manifestFile = manifestFiles[env];
+    const manifest = yaml.safeLoad(fs.readFileSync(manifestFile, 'utf8'));
+    return _.get(manifest, 'applications[0].env.MONGO_DB_URL_LOCAL');
+  }
+};
+
+var importStarted = false;
+
+const exit = message => {
+  console.log(message);
+  process.exit(1);
+};
+
+const validateEnvironment = env => {
+  if (! _.includes(validEnvironments, env)) {
+    exit(`  error:invalid environment '${env}' - should be one of '${validEnvironments.join("', '")}'`);
+  }
+};
+
+const importOne = (mongoUrl, csv, collection) => {
+  const url = parse(mongoUrl, true);
+  const database = url.pathname.substr(1);
+
+  console.log(yellow(`Importing '${csv}' to the '${collection}' collection in the '${database}' database on '${url.hostname}:${url.port}'`));
+
+  let args = ['--type=csv', '--headerline', '--drop', `--file=${csv}`, `--collection=${collection}`];
+
+  function appendArg(option, value) {
+    if (value !== '' && value !== undefined) {
+      args.push(`--${option}=${value}`);
+    }
+  }
+
+  appendArg('host',     url.hostname);
+  appendArg('port',     url.port);
+  appendArg('username', url.username);
+  appendArg('password', url.password);
+  appendArg('db',       database);
+
+  if (url.query.ssl === 'true') {
+    args.push('--ssl');
+  }
+
+  const importProcess = spawn('mongoimport', args);
+
+  function log(colour, string) {
+    string.split(/(\r?\n)/g).forEach((line) => {
+      const output = line.replace(/\s+$/, '').replace(/^[^\s]*/, '').replace(/^\s+/, '  ');
+      if (output !== '') {
+        console.log(colour(output));
+      }
+    });
+  }
+
+  importProcess.stderr.on('data', data => {
+    const string = data.toString();
+    const colour = string.match(/(failed|imported 0|error)/i) ? red : yellow;
+    log(colour, string);
+  });
+
+  importProcess.on('close', code => {
+    const message = code === 0 ? green(`  Import of ${collection} succeeded.\n`) : red(`  Import of the '${collection}' collection into the '${database}' database on '${url.hostname}:${url.port} failed (code=${code})\n`);
+    console.log(message);
+  });
+};
+
+const doImport = mongoUrl => {
+  _.each(fs.readdirSync('./tables'), file => {
+    if (_.endsWith(file, '.csv')) {
+      const collection = path.basename(file, '.csv');
+      importOne(mongoUrl, './tables/' + file, collection);
+    }
+  });
+};
+
+program
+  .arguments('mongo-import <env> ')
+  .action( env => {
+    validateEnvironment(env);
+    importStarted = true;
+    doImport(mongoUrl(env));
+  });
+
+program.parse(process.argv);
+
+if (!importStarted) {
+    console.log(`  error: missing required argument 'env' - should be one of '${validEnvironments.join("', '")}'`);
+}
