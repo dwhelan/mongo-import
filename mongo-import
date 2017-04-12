@@ -4,6 +4,7 @@
 const program = require('commander');
 const fs      = require('fs');
 const path    = require('path');
+const yaml    = require('js-yaml');
 const parse   = require('url-parse');
 const spawn   = require('child_process').spawn;
 const colour  = require('cli-color');
@@ -13,14 +14,24 @@ const red    = colour.red;
 const green  = colour.green;
 const yellow = colour.yellow;
 
-const mongoUrls = {
-  'local': 'mongodb://localhost:27017/dev',
-  'dev':   'mongodb://docdb-acdcdev:91N1ehbLBNV1I695qjXsHQHyDkNItz64MoZwh66ebOWRO9TZiOVIeakLToJgHBgluxgVfPxVcJ057RXQInafrA==@docdb-acdcdev.documents.azure.com:14334/dev?ssl=true',
-  'qa':    'mongodb://docdb-acdcqa:O1B29nNwg292n4WIMOVmZsmm9rSeXZfC59w095GHt78mdlX8efycJ8kbAk7HnJ5PJgzDvLESR9voUyBJAwzeDQ==@docdb-acdcqa.documents.azure.com:14338/gbi?ssl=true',
-  'uat':   'mongodb://docdb-acdcuat:DMO2WGrmgAvV7Mgcc7gNnv2AcN777WaW5WXu3hTqZqv1pyy0m5O3UwdGcpC2jwiBJHjHs6mKXWvdx9cOeLruuw==@docdb-acdcuat.documents.azure.com:10250/gbi?ssl=true'
+const manifestFiles = {
+  'dev': 'manifest.yml',
+  'qa':  'manifest-test.yml',
+  'uat': 'manifest-uat.yml'
 };
 
-const validEnvironments = _.keys(mongoUrls);
+const validEnvironments = _.union(_.keys(manifestFiles), ['local']);
+
+const mongoUrl = env => {
+  if (env === 'local') {
+    return 'mongodb://localhost:27017/dev';
+  } else {
+    const manifestFile = manifestFiles[env];
+    const manifest = yaml.safeLoad(fs.readFileSync(manifestFile, 'utf8'));
+    return _.get(manifest, 'applications[0].env.MONGO_DB_URL_LOCAL');
+  }
+};
+
 var importStarted = false;
 
 const exit = message => {
@@ -33,7 +44,6 @@ const validateEnvironment = env => {
     exit(`  error:invalid environment '${env}' - should be one of '${validEnvironments.join("', '")}'`);
   }
 };
-
 
 const importOne = (mongoUrl, csv, collection) => {
   const url = parse(mongoUrl, true);
@@ -82,11 +92,11 @@ const importOne = (mongoUrl, csv, collection) => {
   });
 };
 
-const doImport = mongoUlr => {
+const doImport = mongoUrl => {
   _.each(fs.readdirSync('./tables'), file => {
     if (_.endsWith(file, '.csv')) {
       const collection = path.basename(file, '.csv');
-      importOne(mongoUlr, './tables/' + file, collection);
+      importOne(mongoUrl, './tables/' + file, collection);
     }
   });
 };
@@ -96,7 +106,7 @@ program
   .action( env => {
     validateEnvironment(env);
     importStarted = true;
-    doImport(mongoUrls[env]);
+    doImport(mongoUrl(env));
   });
 
 program.parse(process.argv);

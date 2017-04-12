@@ -5,4 +5,5 @@ reports
 node_modules
 reports
 *.log
-.npmrc
+manifest*
+.npmrc*

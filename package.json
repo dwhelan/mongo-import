@@ -1,8 +1,12 @@
 {
   "name": "mongo-import",
   "version": "0.0.2",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "description": "mongo-import",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dwhelan/mongo-import.git"
+  },
   "bin": {
     "mongo-import": "mongo-import"
   },
@@ -10,15 +14,14 @@
     "build": "yarn lint",
     "cover": "nyc yarn test",
     "lint": "eslint .",
-    "import": "mongo-import ./tables/test.csv Test",
-    "start": "npm run import",
+    "import": "mongo-import",
+    "start": "yarn import",
     "test": "mocha --colors --recursive"
   },
   "dependencies": {
     "cli-color": "^1.2.0",
     "commander": "^2.9.0",
-    "fs": "^0.0.1-security",
-    "path": "^0.12.7",
+    "js-yaml": "^3.8.3",
     "url-parse": "^1.1.8"
   },
   "devDependencies": {
@@ -26,8 +29,5 @@
     "eslint-plugin-nodeca": "^1.0.3",
     "mocha": "^3.2.0",
     "nyc": "^10.2.0"
-  },
-  "publishConfig": {
-    "registry": "https://artifactory.manulife.com/api/npm/mfc-dig-npm-local"
   }
 }
